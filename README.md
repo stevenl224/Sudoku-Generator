@@ -1,2 +1,4 @@
 # Sudoku-Generator
-This program utilizes object oriented programming and can generate varying difficulty level Sudoku puzzles along with their solution
+This program can generate varying difficulty level Sudoku puzzles along with their solution. It was written in Python and implements OOP.
+
+![Picture](SudokuExampleTest.png)
