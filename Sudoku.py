@@ -3,6 +3,9 @@
 # Final Project
 
 import random
+from tkinter import *
+from tkinter import ttk
+from tkinter import messagebox
 
 class Sudoku:
 
@@ -120,7 +123,6 @@ class Sudoku:
         
         return
 
-
     def solve(self): # recursively solves board
         # finds first empty cell in board
         spacesAvailable = self.findEmptySpace() 
@@ -148,46 +150,123 @@ class Sudoku:
         # if none of the numbers work in the empty cell, return False to trigger backtracking
         return False
 
-    # prints the Sudoku board
-    def print(self):
-        print('The generated random board is:\n=========================')
+    # # prints the Sudoku board
+    # def print(self):
+    #     print('The generated random board is:\n=========================')
     
+    #     for i in range(9):
+    #         for j in range(9):
+    #             print(self.board[i][j], end=" ")
+    #             if (j + 1) % 3 == 0:
+    #                 print("|", end=" ")
+    #         print()
+    #         if (i + 1) % 3 == 0:
+    #             print("-" * 21)
+    
+    # # prints solution for Sudoku board
+    # def printSolution(self):
+    #     print(f'The solution for board:\n=====================')
+    #     for i in range(9):
+    #         for j in range(9):
+    #             print(self.solution[i][j], end=" ")
+    #             if (j + 1) % 3 == 0:
+    #                 print("|", end=" ")
+    #         print()
+    #         if (i + 1) % 3 == 0:
+    #             print("-" * 21)
+
+class SudokuGUI:
+    # creates gui for sudoku board, creating window and grid
+    def __init__(self, sudoku, solution):
+        self.sudoku = sudoku
+        self.solution = solution
+        self.window = Tk()
+        self.frame = Frame(self.window)
+        self.window.geometry("500x500")
+        self.window.title("Sudoku")
+        self.create_grid()
+        self.window.mainloop()
+
+    def create_buttons(self):
+        self.check_button = ttk.Button(self.window, state=DISABLED, text="Check", command=self.check_solution)
+        self.clear_button = ttk.Button(self.window, text="Clear", command=self.clear_board)
+        self.solve_button = ttk.Button(self.window, text="Solve", command=self.solve)
+        
+        self.check_button.grid(row=9, column=0, columnspan=3, sticky="nsew")
+        self.clear_button.grid(row=9, column=3, columnspan=3, sticky="nsew")
+        self.solve_button.grid(row=9, column=6, columnspan=3, sticky="nsew")
+
+    def check_input(self, event):
+        has_input = False
         for i in range(9):
             for j in range(9):
-                print(self.board[i][j], end=" ")
-                if (j + 1) % 3 == 0:
-                    print("|", end=" ")
-            print()
-            if (i + 1) % 3 == 0:
-                print("-" * 21)
-    
-    # prints solution for Sudoku board
-    def printSolution(self):
-        print(f'The solution for board:\n=====================')
+                if self.entry_grid[i][j] is not None and self.entry_grid[i][j].get() != "":
+                    has_input = True
+                    break
+            if has_input:
+                break
+        if has_input:
+            self.check_button.configure(state=NORMAL)
+        else:
+            self.check_button.configure(state=DISABLED)
+        
+    def create_grid(self):
+        self.entry_grid = []
+        for i in range(9):
+            self.window.rowconfigure(i, weight=1)
+            row = []
+            for j in range(9):
+                value = self.sudoku.board[i][j]
+                self.window.columnconfigure(j, weight=1)
+
+                if value == 0:
+                    entry = Entry(self.window, width=2, justify=CENTER, font=('Georgia 25'))
+                    entry.grid(row=i, column=j, sticky="nsew")
+                    entry.bind("<KeyRelease>", self.check_input)
+                    row.append(entry)
+                else:
+                    self.cell = ttk.Label(self.window, text=value, borderwidth=1, relief="solid", font=('Georgia 25'), justify=CENTER)
+                    self.cell.grid(row=i, column=j, sticky="nsew")
+                    row.append(None)
+            self.entry_grid.append(row)
+        self.entry_copy = self.entry_grid
+        
+        self.create_buttons()
+
+    def check_solution(self):
+        error = 0
         for i in range(9):
             for j in range(9):
-                print(self.solution[i][j], end=" ")
-                if (j + 1) % 3 == 0:
-                    print("|", end=" ")
-            print()
-            if (i + 1) % 3 == 0:
-                print("-" * 21)
+                if self.entry_grid[i][j] is not None:
+                    value = self.entry_grid[i][j].get()
+                    if value == "":
+                        continue
+                    if int(value) != self.sudoku.solution[i][j]:
+                        messagebox.showerror("Error", "Incorrect value at row {} column {}".format(i+1, j+1)) # returns popup of wrong cell input
+                        error += 1
+
+        if error != 0:
+            return
+        messagebox.showinfo("Success", "Your solution is correct!") # message pop-up when correct solution
+
+    def clear_board(self): # clears all prior inputs on board
+        for i in range(9):
+            for j in range(9):
+                if self.entry_grid[i][j] is not None:
+                    self.entry_grid[i][j].delete(0, "end")
+        # Reset the state of the check_button to "disabled"
+        self.check_button.configure(state=DISABLED)
+
+    def solve(self):
+        self.check_button.configure(state=NORMAL)
+        for i in range(9):
+            for j in range(9):
+                if self.entry_grid[i][j] is not None:
+                    self.entry_grid[i][j].delete(0, "end")
+                    self.entry_grid[i][j].insert(0, self.solution[i][j])
 
 
-# three examples for three different difficulties
-sudoku = Sudoku()
-sudoku1 = Sudoku()
-sudoku2 = Sudoku()
-
-sudoku.generate()
-# sudoku1.generate()
-# sudoku2.generate()
-
-sudoku.print()
-sudoku.printSolution()
-# print('--------------------------------')
-# sudoku1.print()
-# sudoku1.printSolution()
-# print('--------------------------------')
-# sudoku2.print()
-# sudoku2.printSolution()
+if __name__ == "__main__":
+    sudoku = Sudoku()
+    sudoku.generate() 
+    gui = SudokuGUI(sudoku, sudoku.solution)
