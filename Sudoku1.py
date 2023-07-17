@@ -1,11 +1,123 @@
-# Steven Lam
-# 12/15/22
-# Final Project
-
 import random
 from tkinter import *
 from tkinter import ttk
+from tkinter import font as tkfont
 from tkinter import messagebox
+
+
+class App(Tk):
+    def __init__(self, *args, **kwargs): 
+        Tk.__init__(self, *args, **kwargs)
+
+        #adding title to window along with font
+        self.wm_title("Sudoku")
+        self.title_font = tkfont.Font(family="Georgia",size=50, weight="bold",slant="italic")
+
+        # container to contain all frames on top of each other
+        self.container = Frame(self, height=500, width=500)
+        self.container.pack(side="top",fill="both", expand=True)
+        self.container.grid_rowconfigure(0,weight=1)
+        self.container.grid_columnconfigure(0, weight=1)
+
+        self.frames = {}
+        for F in (StartPage, PlayPage, EndPage):
+            page_name = F.__name__
+            frame = F(parent=self.container,controller=self)
+            self.frames[page_name] = frame
+
+            frame.grid(row=0,column=0,sticky="nsew")
+
+        self.show_frame("StartPage")
+
+    def show_frame(self, page_name):
+        frame = self.frames[page_name]
+        frame.tkraise()
+
+class StartPage(Frame):
+    # forces user to choose difficulty before playing
+    def check_choice(self,button_difficulty):
+        option_chosen = False
+        if button_difficulty:
+            option_chosen = True
+        if option_chosen: # start can be clicked when a difficulty is chosen
+            self.play_button.config(state="normal")
+        else:
+            self.play_button.config(state="disabled")
+
+    # takes chosen difficulty and removes squares respectively
+    def set_difficulty(self, value):
+        if value == 1:
+            self.difficulty = 36
+        elif value == 2:
+            self.difficulty = 46
+        elif value == 3:
+            self.difficulty = 56
+
+
+    def __init__(self, parent, controller):
+        Frame.__init__(self, parent)
+        # initializing variables 
+        self.controller = controller
+        self.difficulty = 0
+        label = Label(self, text="Sudoku", font=controller.title_font)
+        label.pack(side="top", fill="x", pady=40)
+
+        # difficulty buttons that check if button has been clicked and if so, set difficulty to chosen difficulty
+        easy_button = ttk.Button(self, text="Easy", command=lambda: [self.check_choice(1), self.set_difficulty(1)])
+        medium_button = ttk.Button(self, text="Medium", command=lambda: [self.check_choice(2), self.set_difficulty(2)])
+        hard_button = ttk.Button(self, text="Hard", command=lambda: [self.check_choice(3), self.set_difficulty(3)])
+        
+        # packing all buttons in frame
+        easy_button.pack()
+        medium_button.pack()
+        hard_button.pack()
+
+        # initializes start button as disabled, clicking on it transfers to PlayPage
+        self.play_button = Button(self, text="Play", state=DISABLED,
+                            command=lambda: controller.show_frame("PlayPage"))
+        self.play_button.bind("<Button-1>", self.check_choice)
+        self.play_button.pack()
+
+class PlayPage(Frame):
+
+    def __init__(self, parent, controller):
+        Frame.__init__(self, parent)
+        self.controller = controller
+        self.complete = False # checks if sudoku board has been cleared
+
+        # Create Sudoku object and generate board
+        self.sudoku = Sudoku()
+        self.sudoku.generate(self.controller.frames["StartPage"].difficulty)
+        
+        self.gui_frame = Frame(self)
+        self.gui_frame.pack(side=TOP, pady=10)
+        self.gui = SudokuGUI(self.gui_frame, self.sudoku, self.sudoku.solution, self.controller)
+
+        # Back button at bottom of screen to return to start screen
+        back_button = Button(self, text="Back", command=lambda: controller.show_frame("StartPage"))
+        back_button.pack(fill=X,side=BOTTOM)
+
+class EndPage(Frame):
+
+    def __init__(self, parent, controller):
+        Frame.__init__(self, parent)
+        self.controller = controller
+
+        congrats_label = Label(self, text="Congratulations!")
+        congrats_label.pack()
+
+        play_again_button = Button(self, text="Play Again",
+                                   command=lambda: controller.show_frame("StartPage"))
+        play_again_button.pack()
+
+        quit_button = Button(self, text="Quit",
+                             command=self.quit)
+        quit_button.pack()
+
+        back_button = Button(self, text="Back to Menu",
+                             command=lambda: controller.show_frame("StartPage"))
+        back_button.pack()
+
 
 class Sudoku:
 
@@ -48,7 +160,7 @@ class Sudoku:
         
         return True
 
-    def generate(self): # generates random possible inputs for 3 diagonal boxes from top left to bottom right
+    def generate(self, num_remove): # generates random possible inputs for 3 diagonal boxes from top left to bottom right
 
         numList = list(range(1, 10)) # set of numbers 1-9
         for row in range(3):
@@ -81,22 +193,7 @@ class Sudoku:
                 rowList.append(self.board[row][col])
             self.solution.append(rowList)
 
-        while(1):
-            choice = int(input('How difficult would you like the Sudoku puzzle to be (input 1, 2, or 3)?\n1. Easy (36 squares removed)\n2. Medium (46 sqaures removed)\n3. Hard (56 sqaures removed)\n'))
-            
-            # changes number of squares to remove based on user input
-            if choice == 1:
-                squaresToRemove = 36
-                break
-            elif choice == 2:
-                squaresToRemove = 46
-                break
-            elif choice == 3:
-                squaresToRemove = 56
-                break
-            else:
-                print('That was invalid, please choose a proper input.\n')
-        self.removeSquares(squaresToRemove) # removes desired amount of squares and updates grid
+        self.removeSquares(46) # removes desired amount of squares and updates grid
         return 
 
     
@@ -150,47 +247,20 @@ class Sudoku:
         # if none of the numbers work in the empty cell, return False to trigger backtracking
         return False
 
-    # # prints the Sudoku board
-    # def print(self):
-    #     print('The generated random board is:\n=========================')
-    
-    #     for i in range(9):
-    #         for j in range(9):
-    #             print(self.board[i][j], end=" ")
-    #             if (j + 1) % 3 == 0:
-    #                 print("|", end=" ")
-    #         print()
-    #         if (i + 1) % 3 == 0:
-    #             print("-" * 21)
-    
-    # # prints solution for Sudoku board
-    # def printSolution(self):
-    #     print(f'The solution for board:\n=====================')
-    #     for i in range(9):
-    #         for j in range(9):
-    #             print(self.solution[i][j], end=" ")
-    #             if (j + 1) % 3 == 0:
-    #                 print("|", end=" ")
-    #         print()
-    #         if (i + 1) % 3 == 0:
-    #             print("-" * 21)
-
 class SudokuGUI:
     # creates gui for sudoku board, creating window and grid
-    def __init__(self, sudoku, solution):
+    def __init__(self, parent, sudoku, solution, controller):
         self.sudoku = sudoku
         self.solution = solution
-        self.window = Tk()
-        self.frame = Frame(self.window)
-        self.window.geometry("500x500")
-        self.window.title("Sudoku")
+        self.controller = controller
+        self.frame = Frame(parent)
+        self.frame.pack()
         self.create_grid()
-        self.window.mainloop()
 
     def create_buttons(self):
-        self.check_button = ttk.Button(self.window, state=DISABLED, text="Check", command=self.check_solution)
-        self.clear_button = ttk.Button(self.window, text="Clear", command=self.clear_board)
-        self.solve_button = ttk.Button(self.window, text="Solve", command=self.solve)
+        self.check_button = Button(self.frame, state=DISABLED, text="Check", command=self.check_solution)
+        self.clear_button = Button(self.frame, text="Clear", command=self.clear_board)
+        self.solve_button = Button(self.frame, text="Solve", command=self.solve)
         
         self.check_button.grid(row=9, column=0, columnspan=3, sticky="nsew")
         self.clear_button.grid(row=9, column=3, columnspan=3, sticky="nsew")
@@ -209,23 +279,52 @@ class SudokuGUI:
             self.check_button.configure(state=NORMAL)
         else:
             self.check_button.configure(state=DISABLED)
+
+    # def resize(self,event):
+    #     self.entry.update() # updates most current dimensions
+        
+    #     for i in range(9):
+    #         for j in range(9):
+                
+    #     width = self.entry.winfo_width()
+    #     height = self.entry.winfo_height()
+    #     print(width,height)
+
+    #     self.entry.config(font=("Georgia", int(width)))
+    #     self.entry.config(font=("Georgia", int(height)))
+
+
+    # ensures that only digits 1-9 can be entered
+    def check_number(self,P):
+        digits = '123456789'
+        try:
+            if P in digits:
+                if len(P) == 0 or len(P) <= 1 and P.isdigit():
+                    return True
+                else:
+                    return False
+            else:
+                return False
+        except TypeError:
+            return False
+            
         
     def create_grid(self):
         self.entry_grid = []
         for i in range(9):
-            self.window.rowconfigure(i, weight=1)
             row = []
             for j in range(9):
                 value = self.sudoku.board[i][j]
-                self.window.columnconfigure(j, weight=1)
 
                 if value == 0:
-                    entry = Entry(self.window, width=2, justify=CENTER, font=('Georgia 25'))
-                    entry.grid(row=i, column=j, sticky="nsew")
-                    entry.bind("<KeyRelease>", self.check_input)
-                    row.append(entry)
+                    self.entry = Entry(self.frame, validate="key", validatecommand=(self.frame.register(self.check_number), '%P'), width=2, justify=CENTER, font=('Georgia 20'), relief=RAISED)
+                    self.entry.grid(row=i, column=j, sticky="nsew")
+                    self.entry.bind("<KeyRelease>",self.check_number)
+                    self.entry.bind("<KeyRelease>", self.check_input)
+                    # self.entry.bind("<Configure>", self.resize)
+                    row.append(self.entry)
                 else:
-                    self.cell = ttk.Label(self.window, text=value, borderwidth=1, relief="solid", font=('Georgia 25'), justify=CENTER)
+                    self.cell = Label(self.frame, text=value, borderwidth=1, relief="solid", font=('Georgia 20'), justify=CENTER)
                     self.cell.grid(row=i, column=j, sticky="nsew")
                     row.append(None)
             self.entry_grid.append(row)
@@ -235,6 +334,7 @@ class SudokuGUI:
 
     def check_solution(self):
         error = 0
+        error_message = ""
         for i in range(9):
             for j in range(9):
                 if self.entry_grid[i][j] is not None:
@@ -242,12 +342,15 @@ class SudokuGUI:
                     if value == "":
                         continue
                     if int(value) != self.sudoku.solution[i][j]:
-                        messagebox.showerror("Error", "Incorrect value at row {} column {}".format(i+1, j+1)) # returns popup of wrong cell input
+                        error_message += f"Incorrect value at row {i+1} column {j+1}\n"
                         error += 1
 
         if error != 0:
+            messagebox.showerror("Error", error_message) # returns popup of wrong cell input
             return
         messagebox.showinfo("Success", "Your solution is correct!") # message pop-up when correct solution
+        self.controller.show_frame("EndPage")
+        
 
     def clear_board(self): # clears all prior inputs on board
         for i in range(9):
@@ -267,6 +370,5 @@ class SudokuGUI:
 
 
 if __name__ == "__main__":
-    sudoku = Sudoku()
-    sudoku.generate() 
-    gui = SudokuGUI(sudoku, sudoku.solution)
+    app = App()
+    app.mainloop()
