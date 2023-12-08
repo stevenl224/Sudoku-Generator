@@ -12,6 +12,7 @@ class App(Tk):
         #adding title to window along with font
         self.wm_title("Sudoku")
         self.title_font = tkfont.Font(family="Georgia",size=50, weight="bold",slant="italic")
+        self.second_font = tkfont.Font(family="Georgia",size=25, weight="bold")
 
         # container to contain all frames on top of each other
         self.container = Frame(self, height=500, width=500)
@@ -103,20 +104,20 @@ class EndPage(Frame):
         Frame.__init__(self, parent)
         self.controller = controller
 
-        congrats_label = Label(self, text="Congratulations!")
-        congrats_label.pack()
+        congrats_label = Label(self, text="Congratulations!", font=controller.second_font)
+        congrats_label.pack(pady=10)
 
         play_again_button = Button(self, text="Play Again",
                                    command=lambda: controller.show_frame("StartPage"))
-        play_again_button.pack()
+        play_again_button.pack(pady=2)
 
         quit_button = Button(self, text="Quit",
                              command=self.quit)
-        quit_button.pack()
+        quit_button.pack(pady=2)
 
         back_button = Button(self, text="Back to Menu",
                              command=lambda: controller.show_frame("StartPage"))
-        back_button.pack()
+        back_button.pack(pady=2)
 
 
 class Sudoku:
@@ -280,20 +281,6 @@ class SudokuGUI:
         else:
             self.check_button.configure(state=DISABLED)
 
-    # def resize(self,event):
-    #     self.entry.update() # updates most current dimensions
-        
-    #     for i in range(9):
-    #         for j in range(9):
-                
-    #     width = self.entry.winfo_width()
-    #     height = self.entry.winfo_height()
-    #     print(width,height)
-
-    #     self.entry.config(font=("Georgia", int(width)))
-    #     self.entry.config(font=("Georgia", int(height)))
-
-
     # ensures that only digits 1-9 can be entered
     def check_number(self,P):
         digits = '123456789'
@@ -329,7 +316,7 @@ class SudokuGUI:
                     row.append(None)
             self.entry_grid.append(row)
         self.entry_copy = self.entry_grid
-        
+
         self.create_buttons()
 
     def check_solution(self):
